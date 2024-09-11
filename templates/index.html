@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sketch to Logo Generator</title>
+    </script>
+    
+    <style>
+        #preview {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #preview img {
+            max-width: 500px;
+            max-height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sketch to Logo Generator</h1>
+    <div class="gcse-search"></div>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput" accept="image/*" required>
+        <br><br>
+        <label for="lowerThreshold">Lower Threshold: <span id="lowerValue">50</span></label>
+        <input type="range" id="lowerThreshold" min="0" max="255" value="50">
+        <br>
+        <label for="upperThreshold">Upper Threshold: <span id="upperValue">150</span></label>
+        <input type="range" id="upperThreshold" min="0" max="255" value="150">
+        <br>
+        <button type="button" onclick="generatePreview()">Preview</button>
+        <button type="submit">Generate Logo</button>
+    </form>
+
+    <div id="preview">
+        <h3>Preview:</h3>
+        <img id="previewImage" src="" alt="Traced Sketch Preview">
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const lowerThreshold = document.getElementById('lowerThreshold');
+        const upperThreshold = document.getElementById('upperThreshold');
+        const lowerValue = document.getElementById('lowerValue');
+        const upperValue = document.getElementById('upperValue');
+        const previewImage = document.getElementById('previewImage');
+    
+        lowerThreshold.addEventListener('input', () => {
+            lowerValue.textContent = lowerThreshold.value;
+        });
+    
+        upperThreshold.addEventListener('input', () => {
+            upperValue.textContent = upperThreshold.value;
+        });
+    
+        async function generatePreview() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Please select a file.');
+                return;
+            }
+    
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('lower_threshold', lowerThreshold.value);
+            formData.append('upper_threshold', upperThreshold.value);
+    
+            // Make a request to preview the traced image
+            const response = await fetch('/preview_trace', {
+                method: 'POST',
+                body: formData
+            });
+    
+            if (response.ok) {
+                const data = await response.json();
+                // Append a timestamp to the image URL to prevent caching
+                previewImage.src = `${data.image_url}?t=${new Date().getTime()}`;
+            } else {
+                alert('Error generating preview.');
+            }
+        }
+    
+        // Handle form submission
+        document.getElementById('uploadForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            formData.append('lower_threshold', lowerThreshold.value);
+            formData.append('upper_threshold', upperThreshold.value);
+    
+            fetch('/generate_logo', {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+              })
+              .catch(error => {
+                  alert('Error generating logo: ' + error);
+              });
+        });
+    </script>
+    
+</body>
+</html>
